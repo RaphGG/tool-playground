@@ -1,0 +1,1 @@
+Utilizes Node.js, Cheerio.js, and Axios.js to Scrape Web-Content from Serebii.net and converts it into JSON.
