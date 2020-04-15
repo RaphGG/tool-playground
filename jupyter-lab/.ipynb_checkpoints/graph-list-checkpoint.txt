@@ -1,0 +1,9 @@
+a 3
+c {weight: 24}
+d {weight: 2}
+e {weight: 3}
+b 2
+c {weight: 6}
+d {weight: 10}
+d 1
+e {weight: 18}
