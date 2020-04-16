@@ -1,0 +1,28 @@
+#c:\users\raphael\appdata\local\programs\python\python38-32\lib\site-packages\ipykernel_launcher.py -f C:\Users\raphael\AppData\Roaming\jupyter\runtime\kernel-f880d7cc-c338-45ec-b5f7-a0fde79a9985.json
+# GMT Wed Apr 15 19:27:13 2020
+# Petersen Graph
+0 3
+1 {}
+4 {}
+5 {}
+1 2
+2 {}
+6 {}
+2 2
+3 {}
+7 {}
+3 2
+4 {}
+8 {}
+4 1
+9 {}
+5 2
+7 {}
+8 {}
+6 2
+8 {}
+9 {}
+7 1
+9 {}
+8 0
+9 0
