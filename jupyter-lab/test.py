@@ -1,3 +1,4 @@
+'''
 from matplotlib import pyplot as plt
 from matplotlib import style
 import numpy as np
@@ -22,3 +23,4 @@ style.use('seaborn-whitegrid')
 plt.scatter('x', 'y', c='color', s='size', data=df, cmap=plt.cm.Blues)
 plt.xlabel('x')
 plt.ylabel('y')
+'''

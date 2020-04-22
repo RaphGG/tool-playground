@@ -72,7 +72,6 @@ class Heap():
 
       idx = (idx-1) / 2
 
-
   def contains(self, vertex):
     if self.pos[vertex] < self.size:
       return True
@@ -90,13 +89,13 @@ class Graph():
     self.graph = defaultdict(list)
 
   def addEdge(self, v1, v2, weight):
-    
 
     node = [v2, weight]
     self.graph[v1].insert(0, node)
 
     node = [v1, weight]
     self.graph[v2].insert(0, node)
+    #print(self.graph)
 
   def dijkstra(self, start):
 
@@ -131,19 +130,11 @@ class Graph():
 
     printArr(dist, numVertices)
 
-graph = Graph(9) 
-graph.addEdge(0, 1, 4) 
-graph.addEdge(0, 7, 8) 
-graph.addEdge(1, 2, 8) 
-graph.addEdge(1, 7, 11) 
-graph.addEdge(2, 3, 7) 
-graph.addEdge(2, 8, 2) 
-graph.addEdge(2, 5, 4) 
-graph.addEdge(3, 4, 9) 
-graph.addEdge(3, 5, 14) 
-graph.addEdge(4, 5, 10) 
-graph.addEdge(5, 6, 2) 
-graph.addEdge(6, 7, 1) 
-graph.addEdge(6, 8, 6) 
-graph.addEdge(7, 8, 7) 
-graph.dijkstra(0) 
+graph = Graph(5)
+graph.addEdge(0, 1, 4)
+graph.addEdge(0, 4, 1)
+graph.addEdge(1, 2, 16)
+graph.addEdge(2, 3, 12)
+graph.addEdge(3, 4, 2)
+
+graph.dijkstra(0)
