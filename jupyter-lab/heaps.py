@@ -1,13 +1,20 @@
 from collections import defaultdict
+from IPython.display import display
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import sys
 
-
 class Heap():
   '''
   Object Class to represent a Min-Heap Data Structure.
+  Supports two basic functions: 
+
+  deleteMin() - Best Case: O(1) / Worse Case: O(log n)
+  insert() - Best Case: O(1) / Worst Case: O(log n)
+
+  This simple Min Heap is to be used in conjunction Dijkstra's Algorithm as a priority queue
+  to support O((|E| + |V|)log |V|) behavior.
   '''
   def __init__(self):
     self.array = []
@@ -73,6 +80,18 @@ class Heap():
       self.percolateDown(index)
 
 class Vertex():
+  '''
+  Object Class to represent Vertices in a Graph.
+  These vertices contain 3 primary fields:
+
+  ID: int - An number that identifies the vertex
+  dist: int - The distance to this vertex relative to a source vertex at
+              any given step within Dijkstra's Algorithm.
+
+  path: list - The shortest cost path to reach this vertex relative to a
+               source vertex at any given step within
+               Dijkstra's Algorithm.
+  '''
   def __init__(self, ID, dist=0, path=[]):
     self.ID = ID
     self.dist = dist
@@ -95,17 +114,33 @@ class Vertex():
     return f"Shortest path to vertex {self.ID} is {pathString} with a total cost of {self.dist}"
 
 class Graph():
-  def __init__(self, order):
+  '''
+  Object Class to represent Weighted Non-Directional Graphs.
+  The graphs are stored and represented by an adjacency list format.
+
+  These graphs contain 2 primary fields:
+  order: int - The number of vertices in this graph
+  adjlist: defaultdict(list) - The adjacency list
+  '''
+  def __init__(self, order=0):
     self.order = order
     self.adjlist = defaultdict(list)
+    for vertex in range(order):
+      self.adjlist[vertex] = []
 
   def addEdge(self, v1, v2, weight):
-    #vertex = {'index': v2, 'weight': weight}
+    vertices = self.adjlist.keys()
+    if not v1 in vertices:
+      self.order += 1
+    if not v2 in vertices:
+      self.order += 1
     self.adjlist[v1].append((v2, weight))
     self.adjlist[v2].append((v1, weight))
 
-  def addEdgeDi(self, v1, v2, weight):
-    self.adjlist[v1].append((v2, weight))
+  def addNode(self, v):
+    if not v in self.adjlist.keys():
+      self.adjlist[v] = []
+      self.order += 1
 
   def dijkstra(self, start):
     dist = [float('inf')] * self.order
@@ -137,46 +172,21 @@ class Graph():
           newPath.append(edge[0])
           newVertex = Vertex(edge[0], dist[edge[0]], newPath)
           heap.insert(newVertex)
-  
-  def toNX(self):
-    g = nx.Graph()
-    for node, edgelist in self.adjlist.items():
-      for edge in edgelist:
-        g.add_edge(node, edge[0], weight=edge[1])
 
-    return g
-  
-  def toNXDi(self):
-    g = nx.DiGraph()
-    for node, edgelist in self.adjlist.items():
-      for edge in edgelist:
-        g.add_edge(node, edge[0], weight=edge[1])
-
-    return g
-
-class GraphDi():
-  def __init__(self, order):
-    self.order = order
-    self.adjlist = defaultdict(list)
-
-  def addEdge(self, v1, v2, weight):
-    self.adjlist[v1].append((v2, weight))
-  
-  def addNode(self, v):
-    self.adjlist[v] = []
-
-  def dijkstra(self, start):
-    vertices = []
+  def printDijkstra(self, start):
     plotGraph = self.toNX()
+    idx = pd.Index(range(self.order), name='vertex')
     try:
       pos = nx.planar_layout(plotGraph)
     except nx.NetworkXException:
       pos = nx.spring_layout(plotGraph)
 
     edge_labels = nx.get_edge_attributes(plotGraph, 'weight')
-    options = {'node_size':700,
-    'cmap':plt.cm.Blues,
-    'node_color':plotGraph.nodes()}
+    options = {
+      'node_size':700,
+      'cmap':plt.cm.Blues,
+      'node_color':plotGraph.nodes()
+    }
 
     edge_colors = ['black'] * len(plotGraph.edges())
 
@@ -188,17 +198,23 @@ class GraphDi():
 
     heap = Heap()
     heap.insert(Vertex(start, 0, [start]))
+    vertices = []
 
+    print(f"Begin Dijkstra's Algorithm over the following graph with {self.order} vertices at source vertex: {start}")
+    nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+    nx.draw(plotGraph, pos, with_labels=True, **options)
+    plt.show()
+    print("\nInitial table of vertices and their distances from the source: ")
+    sf = pd.DataFrame({'distance/cost':dist}, index=idx)
+    display(sf)
     while not heap.isEmpty() and numVisited < self.order:
       vertex = heap.deleteMin()
-      vertices.append(vertex)
       if visited[vertex.ID]:
         continue
 
-      #print("Vertex ID:", vertex.ID)
-      #print("Vertex Dist:", vertex.dist)
-      #print("dist array:", dist)
-      #print("visited array:", visited)
+      vertices.append(vertex)
+      print("------")
+      print(f"\nVisiting vertex: {vertex.ID}")
       visited[vertex.ID] = True
       numVisited += 1
 
@@ -208,20 +224,173 @@ class GraphDi():
           edge_colors[index] = 'red'
           nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
           nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+          plt.show()
           edge_colors[index] = 'black'
+
           dist[edge[0]] = edge[1] + vertex.dist
           newPath = vertex.path.copy()
           newPath.append(edge[0])
           newVertex = Vertex(edge[0], dist[edge[0]], newPath)
           heap.insert(newVertex)
 
+          df = pd.DataFrame({'dist/cost':dist}, index=idx)
+          display(df)
+
+    print(f"\nShortest paths to each vertex from vertex: {start}")
     for vertex in vertices:
       for i in range(len(vertex.path[:-1])):
         index = list(plotGraph.edges()).index((vertex.path[i], vertex.path[i+1]))
         edge_colors[index] = 'blue'
-
+      
       nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
       nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+      plt.show()
+      edge_colors = ['black'] * len(plotGraph.edges())
+      print(vertex)
+
+  def toNX(self):
+    g = nx.Graph()
+    for node, edgelist in self.adjlist.items():
+      for edge in edgelist:
+        g.add_edge(node, edge[0], weight=edge[1])
+
+    return g
+
+class GraphDi():
+  '''
+  Object Class to represent Weighted Directional Graphs.
+  The graphs are stored and represented by an adjacency list format.
+
+  These graphs contain 2 primary fields:
+  order: int - The number of vertices in this graph
+  adjlist: defaultdict(list) - The adjacency list
+  '''
+  def __init__(self, order=0):
+    self.order = order
+    self.adjlist = defaultdict(list)
+    for vertex in range(order):
+      self.adjlist[vertex] = []
+
+  def addEdge(self, v1, v2, weight):
+    vertices = self.adjlist.keys()
+    if not v1 in vertices:
+      self.order += 1
+    if not v2 in vertices:
+      self.order += 1
+      self.adjlist[v2] = []
+
+    self.adjlist[v1].append((v2, weight))
+
+
+  def addNode(self, v):
+    if not v in self.adjlist.keys():
+      self.order += 1
+      self.adjlist[v] = []
+
+  def dijkstra(self, start):
+    dist = [float('inf')] * self.order
+    visited = [False] * self.order
+    numVisited = 0
+
+    dist[start] = 0
+
+    heap = Heap()
+    heap.insert(Vertex(start, 0, [start]))
+
+    while not heap.isEmpty() and numVisited < self.order:
+      vertex = heap.deleteMin()
+      if visited[vertex.ID]:
+        continue
+
+      print(vertex)
+      #print("Vertex ID:", vertex.ID)
+      #print("Vertex Dist:", vertex.dist)
+      #print("dist array:", dist)
+      #print("visited array:", visited)
+      visited[vertex.ID] = True
+      numVisited += 1
+
+      for edge in self.adjlist[vertex.ID]:
+        if edge[1] + vertex.dist < dist[edge[0]]:
+          dist[edge[0]] = edge[1] + vertex.dist
+          newPath = vertex.path.copy()
+          newPath.append(edge[0])
+          newVertex = Vertex(edge[0], dist[edge[0]], newPath)
+          heap.insert(newVertex)
+
+  def printDijkstra(self, start):
+    plotGraph = self.toNX()
+    idx = pd.Index(range(self.order), name='vertex')
+    try:
+      pos = nx.planar_layout(plotGraph)
+    except nx.NetworkXException:
+      pos = nx.spring_layout(plotGraph)
+
+    edge_labels = nx.get_edge_attributes(plotGraph, 'weight')
+    options = {
+      'node_size':700,
+      'cmap':plt.cm.Blues,
+      'node_color':plotGraph.nodes()
+    }
+
+    edge_colors = ['black'] * len(plotGraph.edges())
+
+    dist = [float('inf')] * self.order
+    visited = [False] * self.order
+    numVisited = 0
+
+    dist[start] = 0
+
+    heap = Heap()
+    heap.insert(Vertex(start, 0, [start]))
+    vertices = []
+
+    print(f"Begin Dijkstra's Algorithm over the following graph with {self.order} vertices at source vertex: {start}")
+    nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+    nx.draw(plotGraph, pos, with_labels=True, **options)
+    plt.show()
+    print("\nInitial table of vertices and their distances from the source: ")
+    sf = pd.DataFrame({'distance/cost':dist}, index=idx)
+    display(sf)
+    while not heap.isEmpty() and numVisited < self.order:
+      vertex = heap.deleteMin()
+      if visited[vertex.ID]:
+        continue
+
+      vertices.append(vertex)
+      print("---------")
+      print(f"\nVisiting vertex: {vertex.ID}")
+      visited[vertex.ID] = True
+      numVisited += 1
+
+      for edge in self.adjlist[vertex.ID]:
+        if edge[1] + vertex.dist < dist[edge[0]]:
+          index = list(plotGraph.edges()).index((vertex.ID, edge[0]))
+          edge_colors[index] = 'red'
+          nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+          nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+          plt.show()
+          edge_colors[index] = 'black'
+
+          dist[edge[0]] = edge[1] + vertex.dist
+          newPath = vertex.path.copy()
+          newPath.append(edge[0])
+          newVertex = Vertex(edge[0], dist[edge[0]], newPath)
+          heap.insert(newVertex)
+
+          df = pd.DataFrame({'dist/cost':dist}, index=idx)
+          display(df)
+
+    print(f"\nShortest paths to each vertex from vertex: {start}")
+    for vertex in vertices:
+      for i in range(len(vertex.path[:-1])):
+        index = list(plotGraph.edges()).index((vertex.path[i], vertex.path[i+1]))
+        edge_colors[index] = 'blue'
+      
+      nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+      nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+      plt.show()
+      edge_colors = ['black'] * len(plotGraph.edges())
       print(vertex)
 
   def toNX(self):
@@ -234,6 +403,24 @@ class GraphDi():
 
     return g
 
+'''
+testGraph = Graph()
+testGraph.addEdge(0, 1, 1)
+testGraph.addEdge(0, 2, 3)
+testGraph.addEdge(1, 2, 1)
+testGraph.addEdge(1, 3, 5)
+testGraph.addNode(4)
+print(testGraph.order)
+
+testGraphDi = GraphDi()
+testGraphDi.addEdge(0, 1, 1)
+testGraphDi.addEdge(0, 2, 3)
+testGraphDi.addEdge(1, 2, 1)
+testGraphDi.addEdge(1, 3, 5)
+testGraphDi.addNode(1)
+print(testGraphDi.order)
+'''
+'''
 exampleGraph = GraphDi(4)
 exampleGraph.addEdge(0, 1, 1)
 exampleGraph.addEdge(0, 2, 3)
@@ -246,6 +433,7 @@ exampleGraph.addNode(4)
 g = exampleGraph.toNX()
 print(g.nodes)
 print(exampleGraph.adjlist)
+'''
 '''
 vertex = Vertex(0, 0, [0])
 t = (1, 0)
