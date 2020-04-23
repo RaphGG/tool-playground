@@ -1,0 +1,72 @@
+  def printDijkstra(self, start):
+    plotGraph = self.toNX()
+    try:
+      pos = nx.planar_layout(plotGraph)
+    except nx.NetworkXException:
+      pos = nx.spring_layout(plotGraph)
+
+    edge_labels = nx.get_edge_attributes(plotGraph, 'weight')
+    options = {
+      'node_size':700,
+      'node_color':'Green'
+    }
+
+    edge_colors = ['black'] * len(plotGraph.edges())
+
+    dist = [float('inf')] * self.order
+    visited = [False] * self.order
+    numVisited = 0
+
+    dist[start] = 0
+
+    heap = Heap()
+    heap.insert(Vertex(start, 0, [start]))
+    vertices = []
+
+    print(f"Begin Dijkstra's Algorithm over the following graph with {self.order} vertices at source vertex: {start}")
+    nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+    nx.draw(plotGraph, pos, with_labels=True, **options)
+    plt.show()
+    print("\nInitial table of vertices and their distances from the source: ")
+    df = pd.DataFrame({'vertex':range(self.order), 'distance/cost':dist})
+    display(df.style.hide_index())
+    while not heap.isEmpty() and numVisited < self.order:
+      vertex = heap.deleteMin()
+      if visited[vertex.ID]:
+        continue
+
+      vertices.append(vertex)
+      print("------")
+      print(f"\nVisiting vertex: {vertex.ID}")
+      visited[vertex.ID] = True
+      numVisited += 1
+
+      for edge in self.adjlist[vertex.ID]:
+        if edge[1] + vertex.dist < dist[edge[0]]:
+          index = list(plotGraph.edges()).index((vertex.ID, edge[0]))
+          edge_colors[index] = 'red'
+          nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+          nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+          plt.show()
+          edge_colors[index] = 'black'
+
+          dist[edge[0]] = edge[1] + vertex.dist
+          newPath = vertex.path.copy()
+          newPath.append(edge[0])
+          newVertex = Vertex(edge[0], dist[edge[0]], newPath)
+          heap.insert(newVertex)
+
+          df.update({'distance/cost':dist})
+          display(df.style.hide_index())
+
+    print(f"\nShortest paths to each vertex from vertex: {start}")
+    for vertex in vertices:
+      for i in range(len(vertex.path[:-1])):
+        index = list(plotGraph.edges()).index((vertex.path[i], vertex.path[i+1]))
+        edge_colors[index] = 'blue'
+      
+      nx.draw_networkx_edge_labels(plotGraph, pos, edge_labels=edge_labels)
+      nx.draw(plotGraph, pos, with_labels=True, edge_color=edge_colors, **options)
+      plt.show()
+      edge_colors = ['black'] * len(plotGraph.edges())
+      print(vertex)
